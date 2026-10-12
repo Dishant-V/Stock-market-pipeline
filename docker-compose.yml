@@ -1,0 +1,123 @@
+x-airflow-env: &airflow-env
+  AIRFLOW_UID: ${AIRFLOW_UID:-50000}
+  AIRFLOW__CORE__EXECUTOR: LocalExecutor
+  AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: mysql+mysqlconnector://airflow:${MYSQL_PASSWORD:-airflow}@mysql:3306/airflow
+  AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+  AIRFLOW__CORE__FERNET_KEY: ""
+  AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "True"
+  AIRFLOW__WEBSERVER__SECRET_KEY: "local-dev-secret-change-me"
+  AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 60
+  AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: 120
+  APP_DB_HOST: mysql
+  APP_DB_PORT: "3306"
+  APP_DB_USER: ${APP_DB_USER:-app}
+  APP_DB_PASSWORD: ${APP_DB_PASSWORD:-apppass}
+  APP_DB_NAME: ${APP_DB_NAME:-stocks}
+  ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
+  SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASSWORD: ${SMTP_PASSWORD}
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: airflow
+      MYSQL_USER: airflow
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-airflow}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --explicit-defaults-for-timestamp=ON
+    volumes:
+      - mysql-db:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=${MYSQL_ROOT_PASSWORD:-rootpass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    mem_limit: 1g
+
+  airflow-init:
+    build: .
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment: *airflow-env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./scripts:/opt/airflow/scripts
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create --username admin --password admin --firstname Dishant --lastname Vaswani --role Admin --email admin@example.com || true
+    mem_limit: 1g
+
+  airflow-webserver:
+    build: .
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    environment: *airflow-env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./scripts:/opt/airflow/scripts
+    ports:
+      - "8081:8080"
+    command: webserver
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    mem_limit: 1g
+
+  airflow-scheduler:
+    build: .
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    environment: *airflow-env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./scripts:/opt/airflow/scripts
+    command: scheduler
+    mem_limit: 1500m
+
+  streamlit-dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment: *airflow-env
+    volumes:
+      - ./dashboard:/opt/airflow/dashboard
+    ports:
+      - "8501:8501"
+    entrypoint: ["streamlit", "run", "/opt/airflow/dashboard/app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true"]
+    mem_limit: 500m
+
+volumes:
+  mysql-db:

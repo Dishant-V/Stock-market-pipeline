@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff "apache-airflow[mysql]==2.10.4" yfinance==1.6.0 mysql-connector-python==26.7.0
+
+      - name: Lint with ruff
+        run: ruff check .
+
+      - name: Validate DAG imports (no syntax/import errors)
+        run: |
+          export AIRFLOW_HOME=/tmp/airflow
+          airflow db migrate
+          airflow dags list-import-errors
+
+      - name: Validate docker-compose.yml
+        run: docker compose config --quiet
