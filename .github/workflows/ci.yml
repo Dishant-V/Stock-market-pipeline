@@ -28,6 +28,8 @@ jobs:
       - name: Validate DAG imports (no syntax/import errors)
         run: |
           export AIRFLOW_HOME=/tmp/airflow
+          export AIRFLOW__CORE__LOAD_EXAMPLES=False
+          export AIRFLOW__CORE__DAGS_FOLDER="$PWD/dags"
           airflow db migrate
           airflow dags list-import-errors
 
