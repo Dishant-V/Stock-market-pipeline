@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from airflow import DAG
 from airflow.operators.python import PythonOperator
@@ -7,13 +7,12 @@ from airflow.operators.python import PythonOperator
 def run_pipeline():
     """Full pipeline: fetch prices, check thresholds, log history, alert on breaches."""
     import os
+    import smtplib
     import time
+    from email.mime.text import MIMEText
 
     import mysql.connector
-    from mysql.connector import Error as MySQLError
     import yfinance as yf
-    import smtplib
-    from email.mime.text import MIMEText
 
     # --- DB config ---
     db_host = os.environ.get("APP_DB_HOST", "mysql")
@@ -41,7 +40,7 @@ def run_pipeline():
             f"Price: {price:.4f}\n"
             f"Prev Close: {prev_close:.4f}\n"
             f"Pct Change: {pct_change:.4f}%\n"
-            f"Time: {datetime.utcnow().isoformat()}Z"
+            f"Time: {datetime.now(UTC).isoformat()}"
         )
         msg = MIMEText(body)
         msg["Subject"] = subject

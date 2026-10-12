@@ -8,8 +8,6 @@ import os
 import time
 
 import mysql.connector
-from mysql.connector import Error as MySQLError
-
 from fetch_price import fetch_price
 
 

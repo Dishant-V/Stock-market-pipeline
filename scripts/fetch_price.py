@@ -43,7 +43,7 @@ def main() -> None:
                     f"prev_close={row['prev_close']} pct_change={row['pct_change']}%"
                 )
                 results.append(row)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - per-ticker isolation, must not crash the batch
             print(f"{ticker}: ERROR {type(exc).__name__}: {exc}")
 
 

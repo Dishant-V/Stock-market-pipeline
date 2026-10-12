@@ -7,9 +7,10 @@ Skips rows that already exist (based on ticker + fetched_at date).
 """
 import os
 import time
+from datetime import UTC
+
 import mysql.connector
 import yfinance as yf
-from datetime import datetime, timedelta, timezone
 
 
 def get_connection():
@@ -62,7 +63,7 @@ def main():
                 pct_change = ((price - prev_close) / prev_close * 100) if prev_close else 0
                 fetched_at = idx.to_pydatetime()
                 if fetched_at.tzinfo is None:
-                    fetched_at = fetched_at.replace(tzinfo=timezone.utc)
+                    fetched_at = fetched_at.replace(tzinfo=UTC)
 
                 # Use INSERT IGNORE to skip duplicates (unique constraint on ticker + fetched_at)
                 cur = conn.cursor()

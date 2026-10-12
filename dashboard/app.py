@@ -102,7 +102,7 @@ else:
             hover_data=["prev_close", "pct_change"],
             markers=True,
         )
-        fig.update_layout(height=300, margin=dict(l=40, r=20, t=40, b=40))
+        fig.update_layout(height=300, margin={"l": 40, "r": 20, "t": 40, "b": 40})
         st.plotly_chart(fig, use_container_width=True)
 
 # --- 2. Watchlist Table ---
