@@ -77,7 +77,7 @@ services:
       - ./plugins:/opt/airflow/plugins
       - ./scripts:/opt/airflow/scripts
     ports:
-      - "8081:8080"
+      - "8082:8080"
     command: webserver
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]

@@ -115,7 +115,7 @@ cp .env.example .env
 docker compose up -d
 
 # 3. Open the UIs
-#   Airflow:    http://localhost:8081  (admin/admin) → unpause "stock_watchlist"
+#   Airflow:    http://localhost:8082  (admin/admin) → unpause "stock_watchlist"
 #   Dashboard:  http://localhost:8501
 #   MySQL:      localhost:3307 (root/changeme)
 
@@ -126,7 +126,7 @@ docker compose exec airflow-scheduler airflow tasks test stock_watchlist poll_an
 docker compose down
 ```
 
-> **Ports:** Airflow runs on **8081** (8080 kept free for other projects). MySQL on **3307**, dashboard on **8501**.
+> **Ports:** Airflow runs on **8082** (Windows reserves 7982–8081 via Hyper-V, so 8080/8081 can't be used). MySQL on **3307**, dashboard on **8501**.
 
 ---
 

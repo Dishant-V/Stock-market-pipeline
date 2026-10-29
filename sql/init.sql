@@ -7,8 +7,9 @@ FLUSH PRIVILEGES;
 
 USE stocks;
 
+-- VARCHAR(20): NSE tickers like 'ICICIBANK.NS' are 13 chars (was VARCHAR(10), too small)
 CREATE TABLE IF NOT EXISTS watchlist (
-    ticker          VARCHAR(10)     NOT NULL PRIMARY KEY,
+    ticker          VARCHAR(20)     NOT NULL PRIMARY KEY,
     threshold_type  ENUM('pct_drop','price_below','price_above') NOT NULL DEFAULT 'pct_drop',
     threshold_value DECIMAL(10,4)   NOT NULL,
     is_active       BOOLEAN         NOT NULL DEFAULT TRUE,
@@ -17,7 +18,7 @@ CREATE TABLE IF NOT EXISTS watchlist (
 
 CREATE TABLE IF NOT EXISTS price_history (
     id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    ticker      VARCHAR(10)     NOT NULL,
+    ticker      VARCHAR(20)     NOT NULL,
     price       DECIMAL(12,4)   NOT NULL,
     prev_close  DECIMAL(12,4)   NULL,
     pct_change  DECIMAL(8,4)    NULL,
@@ -27,7 +28,7 @@ CREATE TABLE IF NOT EXISTS price_history (
 
 CREATE TABLE IF NOT EXISTS alerts_fired (
     id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    ticker          VARCHAR(10)     NOT NULL,
+    ticker          VARCHAR(20)     NOT NULL,
     rule_type       VARCHAR(20)     NOT NULL,
     threshold_value DECIMAL(10,4)   NULL,
     observed_value  DECIMAL(12,4)   NULL,
@@ -37,9 +38,17 @@ CREATE TABLE IF NOT EXISTS alerts_fired (
     INDEX idx_ticker_time (ticker, fired_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Seed: deliberately LOW thresholds so an alert fires quickly during testing.
+-- Seed: 11-ticker watchlist (6 US + 5 NSE India), low thresholds so alerts fire in demos.
 INSERT INTO watchlist (ticker, threshold_type, threshold_value, is_active) VALUES
-    ('AAPL',  'pct_drop', 0.5000, TRUE),
-    ('MSFT',  'pct_drop', 0.5000, TRUE),
-    ('GOOGL', 'pct_drop', 0.5000, TRUE)
+    ('AAPL',         'pct_drop', 0.5000, TRUE),
+    ('MSFT',         'pct_drop', 0.5000, TRUE),
+    ('GOOGL',        'pct_drop', 0.5000, TRUE),
+    ('NVDA',         'pct_drop', 1.0000, TRUE),
+    ('AMZN',         'pct_drop', 1.0000, TRUE),
+    ('TSLA',         'pct_drop', 1.5000, TRUE),
+    ('RELIANCE.NS',  'pct_drop', 1.0000, TRUE),
+    ('TCS.NS',       'pct_drop', 1.0000, TRUE),
+    ('INFY.NS',      'pct_drop', 1.0000, TRUE),
+    ('HDFCBANK.NS',  'pct_drop', 1.0000, TRUE),
+    ('ICICIBANK.NS', 'pct_drop', 1.0000, TRUE)
 ON DUPLICATE KEY UPDATE threshold_type = VALUES(threshold_type);
